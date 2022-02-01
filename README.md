@@ -1,5 +1,5 @@
 # Movies-Library
-# Movies-
+
 # Project Name - Project Version
 
 **Author Name**: movies-library s
@@ -14,4 +14,6 @@ I learned about procsees about when the user clik on like engin geogle and prees
 <!-- What are the steps that a user must take in order to build this app on their own machine and get it running? --> go to Engin and request site 
 
 ## Project Features
-<!-- What are the features included in you app --> bulid website to cars shows
+ What are the features included in you app --> bulid website to cars shows
+
+
