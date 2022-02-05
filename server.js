@@ -1,6 +1,7 @@
 'use strict';
+const client =  pg.Client(process.env.DATABASE_URL);
 
-
+const pg = require('pg');
 const express = require('express');
 require('dotenv').config();
 const axios = require('axios');   
@@ -10,6 +11,7 @@ const cors = require('cors');
 // server.use(express.json())
 const server = express();
 server.use(cors());
+const PORT = process.env.PORT;
 
 server.get('/', handelGet )
 server.get('/trending', handeltrending )
@@ -18,6 +20,8 @@ server.get('/The Whole Truth', handelfav )
 server.get('/favorite', handelGet )
 server.get('*', handelerror )
 server.get(handelAllerror)
+server.post('/addMovie',addFavMovieHandler);
+server.get('/myFavmovie',myFavMovieHandler);
 
 let url =`https://api.themoviedb.org/3/trending/all/week?api_key=${process.env.API}&language=en-US`
 
@@ -98,3 +102,30 @@ server.listen(3008,()=>{
 })
 
 
+function addFavMovieHandler(req,res){
+    const addMovie = req.body;
+  //   console.log(recipe)
+    let sql = `INSERT INTO favMovies(id,title,readyInMinutes,summary) VALUES ($1,$2,$3,$4) RETURNING *;`
+    let values=[favMovies.id,favMovies.title,favMovies.readyInMinutes,favMovies.summary];
+    client.query(sql,values).then(data =>{
+        res.status(200).json(data.rows);
+    }).catch(error=>{
+        errorHandler(error,req,res)
+    });
+  }
+
+
+  function myFavMovieHandler(req,res){
+    let sql = `SELECT * FROM favMovies;`;
+    client.query(sql).then(data=>{
+       res.status(200).json(data.rows);
+    }).catch(error=>{
+        errorHandler(error,req,res)
+    });
+}
+
+  client.connect().then(()=>{
+    server.listen(PORT,()=>{
+        console.log(`listining to port ${PORT}`)
+    })
+})
