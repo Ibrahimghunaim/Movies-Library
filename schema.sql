@@ -3,3 +3,4 @@ CREATE TABLE IF NOT EXISTS favMovies (
     title VARCHAR(255),
     readyInMinutes INTEGER,
     summary VARCHAR(10000),);
+    
