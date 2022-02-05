@@ -1,5 +1,5 @@
 'use strict';
-const client =  pg.Client(process.env.DATABASE_URL);
+const client = pg.Client(process.env.DATABASE_URL);
 
 const pg = require('pg');
 const express = require('express');
@@ -22,6 +22,8 @@ server.get('*', handelerror )
 server.get(handelAllerror)
 server.post('/addMovie',addFavMovieHandler);
 server.get('/myFavmovie',myFavMovieHandler);
+server.put('/updateMovie/:id/:name',updateMovieHandler); 
+server.delete('/deleteMovie/:id',deleteMovieHandler);
 
 let url =`https://api.themoviedb.org/3/trending/all/week?api_key=${process.env.API}&language=en-US`
 
@@ -129,3 +131,31 @@ function addFavMovieHandler(req,res){
         console.log(`listining to port ${PORT}`)
     })
 })
+
+function updateMovieHandler (req,res){
+    const id = req.params.id;
+    console.log(req.params.name);
+    const favMovies = req.body;
+    const sql = `UPDATE favMovies SET id = $1 title =$2, readyInMinutes = $3, summary = $4  RETURNING *;`; 
+    let values=[favMovies.title,favMovies.readyinminutes,favMovies.id];
+    client.query(sql,values).then(data=>{
+        res.status(200).json(data.rows);
+    
+    }).catch(error=>{
+        errorHandler(error,req,res)
+    })
+}
+
+
+function deleteMovieHandler(req,res){
+    const id = req.params.id;
+    const sql = `DELETE FROM favMovies WHERE id=${id};` 
+    // DELETE FROM table_name WHERE condition;
+
+    client.query(sql).then(()=>{
+        res.status(200).send("The favMovies has been deleted");
+        // res.status(204).json({});
+    }).catch(error=>{
+        errorHandler(error,req,res)
+    });
+}
