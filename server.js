@@ -1,161 +1,186 @@
-'use strict';
-const client = pg.Client(process.env.DATABASE_URL);
+`use strict`
+require(`dotenv`).config()
+const pg =require(`pg`)
+// const client = new pg.Client(process.env.DATABASE_URL)
+const client = new pg.Client({
+    connectionString: process.env.DATABASE_URL,
+    ssl: { rejectUnauthorized: false }
+})
+const express = require(`express`)
+const cors = require(`cors`)
+const axios = require(`axios`)
+const server = express()
+server.use(cors())
+server.use(express.json())
+const port = process.env.PORT
+const data = require(`./Movie Data/data.json`)
 
-const pg = require('pg');
-const express = require('express');
-require('dotenv').config();
-const axios = require('axios');   
+let URL =`https://api.themoviedb.org/3/trending/all/week?api_key=${process.env.APIKEY}`
+let URL2 = `https://api.themoviedb.org/3/search/movie?api_key=${process.env.APIKEY}&language=en-US&query=The&page=2`
 
-const data = require('./data.json');
-const cors = require('cors');
-// server.use(express.json())
-const server = express();
-server.use(cors());
-const PORT = process.env.PORT;
-
-server.get('/', handelGet )
-server.get('/trending', handeltrending )
-server.get('/The Whole Truth', handelfav )
-
-server.get('/favorite', handelGet )
-server.get('*', handelerror )
-server.get(handelAllerror)
-server.post('/addMovie',addFavMovieHandler);
-server.get('/myFavmovie',myFavMovieHandler);
-server.put('/updateMovie/:id/:name',updateMovieHandler); 
-server.delete('/deleteMovie/:id',deleteMovieHandler);
-
-let url =`https://api.themoviedb.org/3/trending/all/week?api_key=${process.env.API}&language=en-US`
+client.connect().then(()=>{
+    server.listen(port,()=>{
+        console.log(`listining to port ${port}`)
+    })
+})
 
 
-function trendinginfo(id, title, release_date, poster_path, overview ){
-    this.id = id;
-    this.title = title;
-    this.release_date = release_date;
-    this.poster_path = poster_path;
-    this.overview = overview;
 
+
+// server.listen(5000,()=>{
+// console.log("server is starting");
+// })
+
+
+server.get(`/search`,handelSearch)
+server.get(`/`,handelget)
+server.get(`/trending`,handelTranding)
+server.get(`/favorite`,favoriteHandel)
+server.get(`/TheFateoftheFurious`,TheFateoftheFuriousHandel)
+server.get(`/TheDeepHouse`,TheDeepHouseHandel)
+server.post(`/addMovie`,postHandel)
+server.get(`/getMovies`,getMoviesHandel)
+server.put(`/UPDATE/:id`,handelUpdate)
+server.delete(`/DELETE/:id`,handelDelete)
+server.get(`/getByIdMovie/:id`,handelGetidMovis)
+server.get(handelServerErroe)
+server.get(`*`, handelError)
+function handelget(req,res){
+    return res.status(200).json(data)
+}
+
+function favoriteHandel(req,res){
+    res.status(200).send("Welcome to Favorite Page")
+}
+function handelUpdate (req,res){
+const id = req.params.id
+const data = req.body
+console.log(data);
+// const sql = `UPDATE favRecipes SET title =$1, readyInMinutes = $2, summary = $3 ,vegetarian=$4, instructions=$5, sourceUrl =$6 WHERE id=$7 RETURNING *;`; 
+let sql =`UPDATE famovis SET title = $1 , overview =$2,poster_path=$3 , release_date=$4 , comment =$5 WHERE id=$6 RETURNING  *;`;
+values =[data.title,data.overview,data.poster_path,data.release_date,data.comment,id]
+client.query(sql,values).then(data =>{
+    res.status(200).json(data.rows)
+}).catch(err =>{
+    handelError(err,req,res)
+
+})
+}
+function handelDelete(req,res){
+const id =req.params.id
+let sql =`DELETE  FROM famovis WHERE id=${id}`
+client.query(sql).then(()=>{
+    res.status(200).send("the Movies was deleted successfully")
+}).catch(err =>{
+    handelError(err,req,res)
+})
+}
+function handelGetidMovis(req,res){
+const id =req.params.id
+let sql = `SELECT * FROM famovis WHERE id=${id}`
+client.query(sql).then(data=>{
+    res.status(200).json(data.rows)
+}).catch(err =>{
+    handelError(err,req,res)
+
+})
 }
 
 
-function handeltrending (req,res){
-    let newArr = [];
-    axios.get(url)
-     .then(result=>{
-         console.log(result.data.results);
-         result.data.results.forEach(element => {
-             switch(element.id){
-                case 634649:
-                    console.log("done");
-            newArr.push(new trendinginfo(element.id,element.title,element.release_date,element.overview));
-             }
-         });
-         res.status(200).json(newArr);
-        }).catch(err=>{
 
-        })
-    }
+function handelServerErroe(req,res){
+    res.status(500).send("Sorry, something went wrong in the server")
+}
+ function handelTranding (req,res){
+    let y = {}
+    axios.get(URL).then(data =>{
+        let dt =data.data.results
+       dt.filter(obj => {
+            if(obj.id==634649){
+                let obj1= new Movis(obj.id,obj.title,obj.release_date,obj.poster_path,obj.overview); 
+                y=obj1
+            }   
+        });
+  res.status(200).json(y)
+    }).catch(err =>{
+        handelError(err,req,res)
+    })
+ }
+ function handelSearch(req,res){
+    axios.get(URL2).then(data =>{
+        let dt =data.data.results
+  res.status(200).json(dt)
+    }).catch(err =>{
+        handelError(err,req,res)
+    })
+ }
+ function TheFateoftheFuriousHandel(req ,res){
+    let y = []
+    axios.get(URL2).then(data =>{
+        let dt =data.data.results
+       dt.filter(obj => {
+            if(obj.id==337339){
+                let obj1= new Movis(obj.id,obj.title,obj.release_date,obj.poster_path,obj.overview); 
+               y.push (obj1)
+            }
+        });
+  res.status(200).json(y)
+    }).catch(err =>{
+        handelError(err,req,res)
 
-    function handelfav (req,res){
-        let newArr2 = [];
-        axios.get(url)
-         .then(result=>{
-             console.log(result.data.results);
-             result.data.results.forEach(element => {
-                 switch(element.id){
-                    case 895001:
-                        console.log("done");
-                newArr2.push(new trendinginfo(element.id,element.title,element.release_date,element.overview));
-                 }
-             });
-             res.status(200).json(newArr2);
-            }).catch(err=>{
-    
-            })
-        }
+    })
+ }
+ function TheDeepHouseHandel (req ,res){
+    let y = []
+    axios.get(URL2).then(data =>{
+        let dt =data.data.results
+       dt.filter(obj => {
+            if(obj.id==672582){
+                let obj1= new Movis(obj.id,obj.title,obj.release_date,obj.poster_path,obj.overview); 
+               y.push (obj1)
+            }
+        });
+  res.status(200).json(y)
+    }).catch(err =>{
+        handelError(err,req,res)
 
-
-
-
-function handelerror(request,response){
-     response.status(404).send("error")
+    })
+ }
+ function postHandel(req,res){
+const add =req.body
+let comment = `New movies Added: `
+ console.log(add);
+ let sql1 =`INSERT INTO famovis(title,overview,poster_path,release_date,comment) VALUES($1,$2,$3,$4,$5) RETURNING *;`
+ let values =[add.original_title,add.overview,add.poster_path,add.release_date,comment]
+ client.query(sql1,values).then(data1 =>{
+    res.status(200).json(data1.rows)
+}).catch(err=>{
+    handelError(err,req,res)
+})
 }
 
-function handel(request,response){
-     response.status(200).send("Welcome to Favorite Page")
+function getMoviesHandel (req,res){
+    let sql =`SELECT * FROM famovis;`;
+    client.query(sql).then(data2 =>{
+        console.log(data2);
+        res.status(200).json(data2.rows)
+    }).catch(err =>{
+        handelError(err,req,res)
+    })
 }
-
-
  
-function handelGet(request,response){
-    console.log("test");
-   return response.status(200).json(data)
 
+function Movis(id,title,release_date,poster_path,overview){
+    this.id =id;
+    this.title = title
+    this.release_date=release_date
+    this.poster_path =poster_path
+    this.overview =overview
 }
-
-function handelAllerror (req,res){
-    return res.status(500).json("error")
-}
-
-
-
-server.listen(3008,()=>{
-    console.log("my server is listining to port 3000");
-})
-
-
-function addFavMovieHandler(req,res){
-    const addMovie = req.body;
-  //   console.log(recipe)
-    let sql = `INSERT INTO favMovies(id,title,readyInMinutes,summary) VALUES ($1,$2,$3,$4) RETURNING *;`
-    let values=[favMovies.id,favMovies.title,favMovies.readyInMinutes,favMovies.summary];
-    client.query(sql,values).then(data =>{
-        res.status(200).json(data.rows);
-    }).catch(error=>{
-        errorHandler(error,req,res)
-    });
-  }
-
-
-  function myFavMovieHandler(req,res){
-    let sql = `SELECT * FROM favMovies;`;
-    client.query(sql).then(data=>{
-       res.status(200).json(data.rows);
-    }).catch(error=>{
-        errorHandler(error,req,res)
-    });
-}
-
-  client.connect().then(()=>{
-    server.listen(PORT,()=>{
-        console.log(`listining to port ${PORT}`)
-    })
-})
-
-function updateMovieHandler (req,res){
-    const id = req.params.id;
-    console.log(req.params.name);
-    const favMovies = req.body;
-    const sql = `UPDATE favMovies SET id = $1 title =$2, readyInMinutes = $3, summary = $4  RETURNING *;`; 
-    let values=[favMovies.title,favMovies.readyinminutes,favMovies.id];
-    client.query(sql,values).then(data=>{
-        res.status(200).json(data.rows);
-    
-    }).catch(error=>{
-        errorHandler(error,req,res)
-    })
-}
-
-
-function deleteMovieHandler(req,res){
-    const id = req.params.id;
-    const sql = `DELETE FROM favMovies WHERE id=${id};` 
-    // DELETE FROM table_name WHERE condition;
-
-    client.query(sql).then(()=>{
-        res.status(200).send("The favMovies has been deleted");
-        // res.status(204).json({});
-    }).catch(error=>{
-        errorHandler(error,req,res)
-    });
+function handelError(error,req,res){
+    const err = {
+         status : 500,
+         messgae : error
+     }
+     res.status(500).send(err);
 }
