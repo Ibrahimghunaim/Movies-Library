@@ -1,6 +1,9 @@
-CREATE TABLE IF NOT EXISTS favMovies (
+DROP TABLE IF EXISTS famovis;
+CREATE TABLE IF NOT EXISTS famovis(
     id SERIAL PRIMARY KEY,
-    title VARCHAR(255),
-    readyInMinutes INTEGER,
-    summary VARCHAR(10000),);
-    
+    title varchar(256),
+    overview varchar(256),
+    poster_path varchar(256),
+    release_date varchar(256),
+    comment varchar(256)
+);
